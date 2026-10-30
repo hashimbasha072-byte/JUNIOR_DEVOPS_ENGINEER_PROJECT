@@ -1,0 +1,21 @@
+APEX OPERATIONS API - DEPLOYMENT AND ROLLBACK EVIDENCE
+
+1. VERSION 1.0.1 DEPLOYMENT
+- Built Docker image: apex-operations-api:1.0.1
+- Deployed using Docker Compose with --no-build.
+- Container status: Up (healthy)
+- Application response:
+  {"application":"Apex Operations API","version":"1.0.1"}
+
+2. ROLLBACK TO VERSION 1.0.0
+- Changed APP_VERSION to 1.0.0.
+- Verified Compose selected apex-operations-api:1.0.0.
+- Recreated the container using the existing image.
+- Application response:
+  {"application":"Apex Operations API","version":"1.0.0"}
+- Health endpoint:
+  {"status":"healthy"}
+
+RESULT
+Version 1.0.1 deployment and rollback to version 1.0.0
+were successfully demonstrated using locally available Docker images.
