@@ -1,0 +1,11 @@
+Intentional failure demonstration
+
+Temporary test:
+def test_intentional_failure_demo():
+    assert 1 == 2
+
+Observed result:
+1 failed, 6 passed
+
+The failure was intentional. The temporary test was removed,
+and the original six tests passed again.
