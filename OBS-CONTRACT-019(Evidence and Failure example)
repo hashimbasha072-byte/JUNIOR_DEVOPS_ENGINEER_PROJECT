@@ -1,1 +1,371 @@
+1. Executive Summary
 
+This document describes the observability contract for the Apex Operations API.
+
+It explains the purpose and expected behaviour of three important API endpoints:
+
+/health
+
+/ready
+
+/metrics
+
+It also demonstrates how the application responds to a simulated dependency failure.
+
+The objective is to make the application easier to monitor, troubleshoot, and maintain by providing clear signals about application health, service readiness, and operational metrics.
+
+2. Scope and Assumptions
+
+The scope of this document includes:
+
+API health monitoring.
+
+Application readiness verification.
+
+Metrics exposure.
+
+Synthetic dependency-failure simulation.
+
+Evidence collection and verification.
+
+The application is developed using FastAPI and packaged using Docker.
+
+The dependency simulation uses the DEPENDENCY_AVAILABLE environment variable as a mock dependency signal.
+
+No production credentials, external service modifications, or live infrastructure changes are required for this demonstration.
+
+Important: All response examples in this document are illustrative. Actual response bodies, status codes, and metric names must be verified against the submitted application implementation before final submission.
+
+3. Endpoint Contract Overview
+
+Endpoint
+
+Purpose
+
+Expected Healthy Behaviour
+
+/health
+
+Checks application liveness
+
+Returns HTTP 200 when the application is alive
+
+/ready
+
+Checks application readiness
+
+Returns success when required dependencies are available
+
+/metrics
+
+Exposes operational metrics
+
+Returns the metrics output implemented by the application
+
+3.1 Health Endpoint – GET /health
+
+Objective:
+
+The health endpoint verifies whether the API application is running and responding to HTTP requests.
+
+It provides a basic liveness signal.
+
+Expected behaviour:
+
+HTTP Method: GET
+
+Healthy Status Code: 200 OK
+
+Response: A small JSON response indicating application health.
+
+Operational Use: Can be used by monitoring systems or container health checks.
+
+Illustrative response:
+
+GET /health
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "status": "healthy"
+}
+
+Explanation:
+
+A successful health response indicates that the application process is alive and responding.
+
+It does not necessarily confirm that all external dependencies are available.
+
+3.2 Readiness Endpoint – GET /ready
+
+Objective:
+
+The readiness endpoint determines whether the application is ready to accept normal requests.
+
+Unlike a basic health check, readiness can verify whether required dependencies are available.
+
+Expected behaviour:
+
+HTTP Method: GET
+
+Dependency Available: HTTP 200 OK.
+
+Dependency Unavailable: HTTP 503 Service Unavailable (if implemented with this status code).
+
+Operational Use: Helps prevent traffic from being routed to an application instance that is not ready.
+
+Illustrative successful response:
+
+GET /ready
+
+HTTP/1.1 200 OK
+
+{
+  "status": "ready"
+}
+
+Illustrative failure response:
+
+GET /ready
+
+HTTP/1.1 503 Service Unavailable
+
+{
+  "status": "not_ready",
+  "reason": "required dependency unavailable"
+}
+
+Explanation:
+
+When the required dependency is available, the application reports that it is ready.
+
+When the dependency becomes unavailable, the application reports that it is not ready.
+
+This distinction allows infrastructure and monitoring systems to identify when an application should temporarily stop receiving normal traffic.
+
+3.3 Metrics Endpoint – GET /metrics
+
+Objective:
+
+The metrics endpoint exposes operational measurements that help developers and operators understand application behaviour.
+
+Expected behaviour:
+
+HTTP Method: GET
+
+Expected Status Code: HTTP 200 when functioning.
+
+Response: Metrics or operational information implemented by the application.
+
+Operational Use: Allows monitoring systems or developers to inspect application-level measurements.
+
+Illustrative verification:
+
+GET /metrics
+
+Expected:
+- Successful HTTP response.
+- Metrics output available.
+- Appropriate response content type.
+
+Explanation:
+
+The metrics endpoint provides additional visibility into the application.
+
+It is separate from health and readiness checks.
+
+The exact metric names and response format depend on the current implementation.
+
+4. Synthetic Failure Demonstration
+
+Objective
+
+Demonstrate how the Apex Operations API behaves when a required dependency becomes unavailable.
+
+This is a controlled simulation using the DEPENDENCY_AVAILABLE environment variable.
+
+It does not require an actual external dependency failure.
+
+Scenario A: Normal Operation
+
+When the dependency is available:
+
+Endpoint
+
+Expected Behaviour
+
+/health
+
+HTTP 200
+
+/ready
+
+HTTP 200
+
+/metrics
+
+Successful response
+
+The application is alive and ready to serve requests.
+
+Scenario B: Dependency Failure
+
+When the dependency becomes unavailable:
+
+Endpoint
+
+Expected Behaviour
+
+/health
+
+Remains healthy if liveness is independent of the dependency
+
+/ready
+
+Reports not ready, typically HTTP 503
+
+/metrics
+
+Remains accessible if it does not depend on the unavailable dependency
+
+This demonstrates the difference between application liveness and application readiness.
+
+Failure Simulation Procedure
+
+Start the Apex Operations API using the normal application startup procedure.
+
+Verify the /health, /ready, and /metrics endpoints.
+
+Configure the dependency simulation to unavailable using the exact value supported by the application, for example DEPENDENCY_AVAILABLE=false.
+
+Restart or recreate the application if the environment variable is read during startup.
+
+Request the three endpoints again.
+
+Capture the actual responses.
+
+Restore the dependency availability setting.
+
+Verify that the readiness endpoint returns to its normal successful state.
+
+Expected Result:
+
+The application should report that it is not ready when the required dependency is unavailable, while its liveness endpoint can remain healthy.
+
+The exact behaviour must be confirmed against the application's implementation.
+
+5. Docker Compose Health Check
+
+The project includes a Docker Compose health check to monitor the application's container health.
+
+The health check helps determine whether the application is responding as expected.
+
+During the review, the following configuration details should be explained:
+
+Health check command.
+
+Check interval.
+
+Timeout.
+
+Retry count.
+
+Start period, if configured.
+
+If the health check uses /health, it primarily verifies application liveness.
+
+It should not automatically be considered a complete dependency readiness check unless the configured command explicitly checks readiness.
+
+6. Testing and Verification
+
+The project uses automated testing with Pytest.
+
+The following verification activities are relevant:
+
+Confirm the application starts successfully.
+
+Verify the health endpoint.
+
+Verify the readiness endpoint.
+
+Verify the metrics endpoint.
+
+Test the simulated dependency failure.
+
+Confirm the readiness response during the failure.
+
+Restore the normal dependency state.
+
+Verify that the application becomes ready again.
+
+Review application logs for useful structured messages.
+
+Confirm that the Docker Compose health check behaves as configured.
+
+Automated tests help ensure that application behaviour remains consistent across changes.
+
+7. Evidence Collection
+
+The following evidence should be attached to demonstrate the implementation.
+
+E-01: Health Endpoint
+
+Capture the successful /health endpoint response.
+
+Purpose: Demonstrates that the application is running and responding.
+
+E-02: Readiness Endpoint – Healthy State
+
+Capture the successful /ready endpoint response.
+
+Purpose: Demonstrates that the application is ready when the required dependency is available.
+
+E-03: Metrics Endpoint
+Purpose: Demonstrates that the application is ready when the required dependency is available.
+
+E-03: Metrics Endpoint
+
+Capture the /metrics endpoint response.
+
+Purpose: Demonstrates that the application exposes its operational metrics or implemented output.
+
+E-04: Synthetic Dependency Failure
+
+Capture the /ready response when the dependency simulation is disabled.
+
+Purpose: Demonstrates that the application reports a readiness failure when the required dependency is unavailable.
+
+E-05: Health and Metrics During Failure
+
+If supported, capture the /health and /metrics responses during the same simulated failure.
+
+Purpose: Demonstrates the distinction between liveness, readiness, and metrics availability.
+
+E-06: Recovery Verification
+
+Capture the /ready endpoint after restoring dependency availability.
+
+Purpose: Demonstrates that the application can return to its normal ready state.
+
+Evidence Requirements:
+
+Show the actual endpoint or command.
+
+Include the HTTP status code.
+
+Include the response body.
+
+Avoid exposing credentials, tokens, or sensitive information.
+
+Use genuine screenshots from the running application.
+
+ Final Summary
+
+The Apex Operations API provides separate observability signals for application health, readiness, and operational metrics.
+
+The synthetic dependency-failure demonstration helps verify how the application responds when a required dependency becomes unavailable.
+
+By separating liveness from readiness, the application provides clearer operational information and makes failure detection easier.
+
+This documentation establishes the expected observability behaviour and provides a repeatable verification approach for technical review.
